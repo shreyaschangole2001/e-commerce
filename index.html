@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      background-color: #eee;
+    }
+
+    .tab {
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background-color: black;
+      color: #fff;
+    }
+
+    .products {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      padding: 20px;
+    }
+
+    .product-card {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin: 10px;
+      padding: 10px;
+      width: 300px;
+      text-align: center;
+    }
+
+    .product-image {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .add-to-cart-btn {
+      background-color: black;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tabs">
+    <div class="tab" onclick="showProducts('Men', this)">Men</div>
+    <div class="tab" onclick="showProducts('Women', this)">Women</div>
+    <div class="tab" onclick="showProducts('Kids', this)">Kids</div>
+  </div>
+  
+
+<div class="products" id="products-container"></div>
+
+<script>
+  const productDataUrl = 'https://cdn.shopify.com/s/files/1/0564/3685/0790/files/multiProduct.json';
+  const productsContainer = document.getElementById('products-container');
+  let activeTab = null;
+
+  async function fetchProductData() {
+    try {
+      const response = await fetch(productDataUrl);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+      return [];
+    }
+  }
+
+  function showProducts(category, tabElement) {
+    if (activeTab) {
+      activeTab.classList.remove('active');
+    }
+
+    tabElement.classList.add('active');
+    activeTab = tabElement;
+
+    fetchProductData().then((data) => {
+      if (Array.isArray(data.categories)) {
+        const selectedCategory = data.categories.find((cat) => cat.category_name === category);
+
+        if (selectedCategory) {
+          const filteredProducts = selectedCategory.category_products;
+          renderProducts(filteredProducts);
+        } else {
+          console.error('Category not found:', category);
+        }
+      } else {
+        console.error('Invalid data format:', data);
+      }
+    });
+  }
+
+  function renderProducts(products) {
+    productsContainer.innerHTML = '';
+
+    products.forEach((product) => {
+      const discountPercent = calculateDiscountPercent(product.price, product.compare_at_price);
+
+      const productCard = document.createElement('div');
+      productCard.classList.add('product-card');
+
+      productCard.innerHTML = `
+        <img src="${product.image}" alt="${product.title}" class="product-image">
+        
+        <div>${product.title}</div>
+        <div>${product.vendor}</div>
+        <div>Price: $${product.price}</div>
+        <div>Compare at Price: $${product.compare_at_price}</div>
+        <div>Discount: ${discountPercent}% off</div>
+        <button class="add-to-cart-btn">Add to Cart</button>
+      `;
+
+      productsContainer.appendChild(productCard);
+    });
+  }
+
+  function calculateDiscountPercent(price, compareAtPrice) {
+    if (!compareAtPrice) {
+      return 0;
+    }
+    const discount = ((compareAtPrice - price) / compareAtPrice) * 100;
+    return Math.round(discount);
+  }
+
+  showProducts('Men', document.querySelector('.tab'));
+</script>
+
+</body>
+</html>
